@@ -1,0 +1,100 @@
+{
+  "name": "PMTool - Google Calendar & Meet Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pmtool-events",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"event_type\"]}}",
+              "value2": "MEETING_SCHEDULED"
+            }
+          ]
+        }
+      },
+      "name": "Filter Meeting Scheduled",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "calendar": "primary",
+        "start": "={{$json[\"body\"][\"data\"][\"start_time\"]}}",
+        "end": "={{$json[\"body\"][\"data\"][\"start_time\"]}}",
+        "additionalFields": {
+          "summary": "={{$json[\"body\"][\"data\"][\"title\"]}}",
+          "description": "Scheduled via Nexus AI PMTool.\nGoogle Meet: ={{$json[\"body\"][\"data\"][\"meeting_link\"]}}",
+          "attendees": [
+            "={{$json[\"body\"][\"data\"][\"attendee_email\"]}}",
+            "={{$json[\"body\"][\"data\"][\"organizer_email\"]}}"
+          ]
+        }
+      },
+      "name": "Create Google Calendar Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "notifications@startup.com",
+        "toEmail": "={{$json[\"body\"][\"data\"][\"attendee_email\"]}}",
+        "subject": "📅 Meeting Confirmed: ={{$json[\"body\"][\"data\"][\"title\"]}}",
+        "text": "Hello ={{$json[\"body\"][\"data\"][\"attendee\"]}},\n\nA meeting has been scheduled by ={{$json[\"body\"][\"data\"][\"organizer\"]}}.\n\nTime: ={{$json[\"body\"][\"data\"][\"start_time\"]}}\nJoin Google Meet: ={{$json[\"body\"][\"data\"][\"meeting_link\"]}}\n\nRegards,\nNexus AI PM Tool"
+      },
+      "name": "Send Gmail Notification",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [950, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Filter Meeting Scheduled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Meeting Scheduled": {
+      "main": [
+        [
+          {
+            "node": "Create Google Calendar Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Calendar Event": {
+      "main": [
+        [
+          {
+            "node": "Send Gmail Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
