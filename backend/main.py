@@ -29,10 +29,18 @@ def _init_db():
         return
     from app.core.database import engine, Base, ensure_user_email_columns, ensure_whatsapp_tables
 
+    db_url = str(engine.url)
+    if db_url.startswith("sqlite"):
+        logger.warning("⚠ Using SQLite — DATABASE_URL is not set. Set it in Render Environment.")
+
     logger.info("Initialising database tables …")
-    Base.metadata.create_all(bind=engine)
-    ensure_user_email_columns()
-    ensure_whatsapp_tables()
+    try:
+        Base.metadata.create_all(bind=engine)
+        ensure_user_email_columns()
+        ensure_whatsapp_tables()
+    except Exception as e:
+        # Handle race condition: another worker may have created the tables already
+        logger.warning(f"DB init race (safe to ignore if another worker succeeded): {e}")
     _db_initialised = True
     logger.info("Database initialisation complete.")
 
