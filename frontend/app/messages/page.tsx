@@ -119,7 +119,9 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!user) return;
 
-    const wsUrl = `ws://localhost:8000/api/chat/ws?user_id=${user.id}`;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+    const wsBase = apiBase.replace(/^http/, "ws").replace(/\/api\/?$/, "");
+    const wsUrl = `${wsBase}/api/chat/ws?user_id=${user.id}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

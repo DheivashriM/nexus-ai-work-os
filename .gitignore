@@ -42,3 +42,9 @@ Thumbs.db
 
 # Agents / AI config (local only)
 .agents/
+
+# Ensure deployment files are NOT ignored
+!render.yaml
+!backend/Procfile
+!backend/runtime.txt
+

@@ -13,7 +13,14 @@ from app.core.database import Base
 from app.models import *
 
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+# Render provides DATABASE_URL as "postgres://..." but SQLAlchemy 2.x
+# requires "postgresql://...".  Rewrite transparently at runtime.
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name:
     fileConfig(config.config_file_name)

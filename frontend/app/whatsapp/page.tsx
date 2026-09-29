@@ -41,7 +41,9 @@ export default function WhatsAppInboxPage() {
 
   useEffect(() => {
     if (!user) return;
-    const socket = new WebSocket(`ws://localhost:8000/api/chat/ws?user_id=${user.id}`);
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+    const wsBase = apiBase.replace(/^http/, "ws").replace(/\/api\/?$/, "");
+    const socket = new WebSocket(`${wsBase}/api/chat/ws?user_id=${user.id}`);
     socket.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);

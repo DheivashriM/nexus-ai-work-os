@@ -1,11 +1,25 @@
+# ============================================================================
 # Render Blueprint — Nexus AI Work OS
 # https://render.com/docs/blueprint-spec
 #
-# Deploy both backend (FastAPI) and frontend (Next.js) as separate services.
-# Set environment variables in the Render dashboard for each service.
+# Deploy backend (FastAPI) + frontend (Next.js) as separate web services,
+# plus a managed PostgreSQL database.
+#
+# Usage:
+#   1. Push this repo to GitHub
+#   2. In the Render Dashboard → New → Blueprint → select this repo
+#   3. Render reads this file and creates all three resources automatically
+# ============================================================================
+
+databases:
+  - name: nexus-db
+    plan: free
+    region: singapore
+    databaseName: nexus_db
+    user: nexus_user
 
 services:
-  # ─── Backend: FastAPI Python API ───
+  # ─── Backend: FastAPI Python API ──────────────────────────────────────
   - type: web
     name: nexus-api
     runtime: python
@@ -13,10 +27,13 @@ services:
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    startCommand: gunicorn main:app --workers 2 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 5 --preload
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: nexus-db
+          property: connectionURI
       - key: SECRET_KEY
         generateValue: true
       - key: ALGORITHM
@@ -35,8 +52,20 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: "3.11.9"
+      - key: NEXUS_PUBLIC_API_URL
+        sync: false
+      - key: N8N_WEBHOOK_URL
+        sync: false
+      - key: META_WA_PHONE_NUMBER_ID
+        sync: false
+      - key: META_WA_ACCESS_TOKEN
+        sync: false
+      - key: META_WA_VERIFY_TOKEN
+        sync: false
+      - key: META_APP_SECRET
+        sync: false
 
-  # ─── Frontend: Next.js React App ───
+  # ─── Frontend: Next.js React App ─────────────────────────────────────
   - type: web
     name: nexus-frontend
     runtime: node
@@ -45,6 +74,7 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     startCommand: npm start
+    healthCheckPath: /
     envVars:
       - key: NEXT_PUBLIC_API_URL
         sync: false

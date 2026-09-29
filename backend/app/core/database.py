@@ -4,14 +4,30 @@ from app.core.config import settings
 
 db_url = settings.DATABASE_URL
 
+# Render provides DATABASE_URL as "postgres://..." but SQLAlchemy 2.x
+# requires "postgresql://...".  Rewrite transparently at runtime.
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
 connect_args = {}
 if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
 
+# Use connection pooling settings appropriate for production PostgreSQL
+pool_kwargs = {}
+if not db_url.startswith("sqlite"):
+    pool_kwargs = {
+        "pool_size": 5,
+        "max_overflow": 10,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,  # Recycle connections every 30 minutes
+    }
+
 engine = create_engine(
     db_url,
     connect_args=connect_args,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    **pool_kwargs,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
