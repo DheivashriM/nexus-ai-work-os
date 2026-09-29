@@ -18,6 +18,9 @@ logger = logging.getLogger("nexus")
 # ── Lazy DB initialisation (runs once, guarded by flag) ───────────────────
 _db_initialised = False
 
+# Register all SQLAlchemy models with Base.metadata (must be at module level)
+import app.models  # noqa: F401
+
 
 def _init_db():
     """Create tables and run migrations exactly once per process."""
@@ -25,7 +28,6 @@ def _init_db():
     if _db_initialised:
         return
     from app.core.database import engine, Base, ensure_user_email_columns, ensure_whatsapp_tables
-    from app.models import *  # noqa: F401 — register all SQLAlchemy models
 
     logger.info("Initialising database tables …")
     Base.metadata.create_all(bind=engine)
