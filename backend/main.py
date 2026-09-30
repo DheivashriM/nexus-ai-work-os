@@ -50,8 +50,9 @@ app = FastAPI(
     title="AI Work Operating System API",
     description="Backend API foundation and AI Agent tool layer for project management.",
     version="2.0.0",
-    docs_url="/docs" if settings.APP_ENV != "production" else None,
-    redoc_url="/redoc" if settings.APP_ENV != "production" else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 
